@@ -80,7 +80,10 @@ if not st.session_state.configured:
     </div>
     """, unsafe_allow_html=True)
 
-    PAT = st.secrets["AZURE_PAT"]
+    pat_input = st.text_input(
+    "Azure DevOps PAT",
+    type="password"
+)
 
     project_input = st.text_input(
         "Project Name",
