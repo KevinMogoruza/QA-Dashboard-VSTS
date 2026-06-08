@@ -55,6 +55,77 @@ def load_test_plans(project, pat):
     normalized_plans.sort(key=lambda plan: plan["name"].lower())
     return normalized_plans, None
 
+
+# =========================
+# Carga de querys
+# =========================
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def load_queries(project, pat):
+
+    session = requests.Session()
+    session.auth = HTTPBasicAuth('', pat)
+
+    url = (
+        f"https://dev.azure.com/{org}/{project}"
+        f"/_apis/wit/queries"
+        f"?$depth=2"
+        f"&api-version=7.1"
+    )
+
+    response = session.get(url, timeout=30)
+
+    if response.status_code != 200:
+        st.error(f"Error cargando queries: HTTP {response.status_code}")
+
+        try:
+            st.json(response.json())
+        except:
+            st.text(response.text)
+
+        return []
+
+
+    queries = []
+
+    def walk(node, path=""):
+
+        current_name = node.get("name", "")
+
+        if not node.get("isFolder", False):
+            queries.append({
+                "id": node["id"],
+                "name": f"{path}/{current_name}" if path else current_name
+            })
+
+        for child in node.get("children", []):
+            next_path = (
+                f"{path}/{current_name}"
+                if path else current_name
+            )
+            walk(child, next_path)
+
+    root = response.json()
+
+
+
+    for c in root.get("children", [])[:10]:
+        st.write({
+        "name": c.get("name"),
+        "isFolder": c.get("isFolder"),
+        "has_children": "children" in c,
+        "id": c.get("id")
+    })
+
+    for child in root.get("value", []):
+        walk(child)
+
+    return sorted(
+        queries,
+        key=lambda q: q["name"].lower()
+    )
+
+
 # =========================
 # LOGIN / CONFIG SCREEN
 # =========================
@@ -64,6 +135,9 @@ if "configured" not in st.session_state:
 
 if "test_plans" not in st.session_state:
     st.session_state.test_plans = []
+
+if "queries" not in st.session_state:
+    st.session_state.queries = []
 
 if not st.session_state.configured:
 
@@ -81,9 +155,9 @@ if not st.session_state.configured:
     """, unsafe_allow_html=True)
 
     pat_input = st.text_input(
-    "Azure DevOps PAT",
-    type="password"
-)
+        "Azure DevOps PAT",
+        type="password"
+    )
 
     project_input = st.text_input(
         "Project Name",
@@ -98,10 +172,14 @@ if not st.session_state.configured:
             st.warning("Enter a PAT first.")
             st.session_state.test_plans = []
         else:
-            with st.spinner("Loading test plans..."):
-                plans, error_status = load_test_plans(project_input, pat_input)
+            with st.spinner("Loading Azure DevOps data..."):
+
+                plans, error_status = load_test_plans(project_input,pat_input)
+
+                queries = load_queries(project_input,pat_input)
 
             st.session_state.test_plans = plans
+            st.session_state.queries = queries
 
             if error_status:
                 st.error(f"Could not load test plans. Azure DevOps returned HTTP {error_status}.")
@@ -116,12 +194,28 @@ if not st.session_state.configured:
             options=st.session_state.test_plans,
             format_func=lambda plan: f"{plan['name']} ({plan['id']})"
         )
+    selected_query = None
 
-    if st.button("Load Dashboard", disabled=selected_plan is None):
+    if st.session_state.queries:
+        selected_query = st.selectbox(
+        "Bug Query",
+        options=st.session_state.queries,
+        format_func=lambda q: q["name"]
+    )
+
+    if st.button("Load Dashboard", disabled=(
+        selected_plan is None
+        or selected_query is None
+    )):
         st.session_state.pat = pat_input
         st.session_state.project = project_input
+
         st.session_state.plan_id = int(selected_plan["id"])
         st.session_state.plan_name = selected_plan["name"]
+
+        st.session_state.query_id = selected_query["id"]
+        st.session_state.query_name = selected_query["name"]
+
         st.session_state.configured = True
         st.rerun()
 
@@ -131,6 +225,7 @@ if not st.session_state.configured:
 pat = st.session_state.pat
 project = st.session_state.project
 plan_id = st.session_state.plan_id
+query_id = st.session_state.query_id
 
 # =========================
 # reiniciar streamlit
@@ -262,7 +357,7 @@ def load_data(project, plan_id, pat):
         "Test Points", "Run %", "Pass %", "Fail %"
     ])
 @st.cache_data(ttl=1800)
-def load_bugs(project, pat):
+def load_bugs(project, pat, queries):
 
     columns = ["ID", "Title", "State", "Priority"]
 
@@ -270,26 +365,16 @@ def load_bugs(project, pat):
     session.auth = HTTPBasicAuth('', pat)
 
     wiql_url = (
-        f"https://dev.azure.com/{org}/{project}"
-        f"/_apis/wit/wiql?api-version=7.1"
-    )
+    f"https://dev.azure.com/{org}/{project}"
+    f"/_apis/wit/wiql/{queries}"
+    f"?api-version=7.1"
+)
+    st.write(wiql_url)
 
-    query = {
-        "query": """
-        SELECT [System.Id]
-        FROM WorkItems
-        WHERE
-            [System.WorkItemType] = 'Bug'
-            AND [System.State] <> 'Closed'
-            AND [System.AreaPath] UNDER 'OmniChannelServices\\OSLEventDriven'
-            AND (
-                [System.Tags] CONTAINS 'QA'
-                OR [System.Tags] CONTAINS 'EDA'
-            )
-        """
-    }
-
-    response = session.post(wiql_url, json=query, timeout=30)
+    response = session.get(
+    wiql_url,
+    timeout=30
+)
 
     if response.status_code != 200:
         return pd.DataFrame(columns=columns)
@@ -343,7 +428,8 @@ with st.spinner("Loading Azure DevOps data..."):
         future_bugs = executor.submit(
             load_bugs,
             project,
-            pat
+            pat,
+            query_id
         )
 
         df = future_data.result()
