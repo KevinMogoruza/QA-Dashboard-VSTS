@@ -161,7 +161,7 @@ if not st.session_state.configured:
 
     project_input = st.text_input(
         "Project Name",
-        value=st.session_state.get("setup_project", "CCaaS")
+        value=st.session_state.get("setup_project")
     )
 
     if st.button("Search Test Plans"):
