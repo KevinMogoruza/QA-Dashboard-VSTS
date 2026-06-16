@@ -88,22 +88,16 @@ def load_queries(project, pat):
 
     queries = []
 
-    def walk(node, path=""):
+    def walk(node):
 
-        current_name = node.get("name", "")
+    if not node.get("isFolder", False):
+        queries.append({
+            "id": node["id"],
+            "name": node["path"]
+        })
 
-        if not node.get("isFolder", False):
-            queries.append({
-                "id": node["id"],
-                "name": f"{path}/{current_name}" if path else current_name
-            })
-
-        for child in node.get("children", []):
-            next_path = (
-                f"{path}/{current_name}"
-                if path else current_name
-            )
-            walk(child, next_path)
+    for child in node.get("children", []) or []:
+        walk(child)
 
     root = response.json()
 
