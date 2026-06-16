@@ -88,16 +88,22 @@ def load_queries(project, pat):
 
     queries = []
 
-    def walk(node):
+    def walk(node, path=""):
+
+        current_name = node.get("name", "")
 
         if not node.get("isFolder", False):
-        queries.append({
-            "id": node["id"],
-            "name": node["path"]
-        })
+            queries.append({
+                "id": node["id"],
+                "name": f"{path}/{current_name}" if path else current_name
+            })
 
-    for child in node.get("children", []) or []:
-        walk(child)
+        for child in node.get("children", []):
+            next_path = (
+                f"{path}/{current_name}"
+                if path else current_name
+            )
+            walk(child, next_path)
 
     root = response.json()
 
@@ -877,8 +883,3 @@ st.dataframe(
     use_container_width=True,
     height=350
 )
-
-
-
-
-
