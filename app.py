@@ -90,7 +90,7 @@ def load_queries(project, pat):
 
     def walk(node):
 
-    if not node.get("isFolder", False):
+        if not node.get("isFolder", False):
         queries.append({
             "id": node["id"],
             "name": node["path"]
