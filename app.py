@@ -127,6 +127,33 @@ def load_queries(project, pat):
 
 
 # =========================
+# Funcion para cargar proyectos
+# =========================
+@st.cache_data(ttl=1800)
+def load_projects(pat):
+
+    session = requests.Session()
+    session.auth = HTTPBasicAuth("", pat)
+
+    url = (
+        f"https://dev.azure.com/{org}"
+        f"/_apis/projects"
+        f"?api-version=7.1"
+    )
+
+    response = session.get(url, timeout=30)
+
+    if response.status_code != 200:
+        return []
+
+    projects = response.json().get("value", [])
+
+    return sorted(
+        projects,
+        key=lambda p: p["name"].lower()
+    )
+
+# =========================
 # LOGIN / CONFIG SCREEN
 # =========================
 
@@ -154,37 +181,54 @@ if not st.session_state.configured:
     </div>
     """, unsafe_allow_html=True)
 
-    pat_input = st.text_input(
-        "Azure DevOps PAT",
-        type="password"
-    )
+    pat = st.text_input("Azure DevOps PAT",type="password")
+    if "projects" not in st.session_state:
+        st.session_state.projects = []
 
-    project_input = st.text_input(
-        "Project Name",
-        value=st.session_state.get("setup_project")
-    )
+    if st.button("Validate PAT"):
 
-    if st.button("Search Test Plans"):
-        st.session_state.setup_project = project_input
-        st.session_state.setup_pat = pat_input
-
-        if not pat_input.strip():
+        if not pat.strip():
             st.warning("Enter a PAT first.")
-            st.session_state.test_plans = []
         else:
-            with st.spinner("Loading Azure DevOps data..."):
+            st.session_state.pat = pat
+            with st.spinner("Loading Projects..."):
 
-                plans, error_status = load_test_plans(project_input,pat_input)
+                st.session_state.projects = load_projects(
+                pat
+            )
+    
+    project_input = None
 
-                queries = load_queries(project_input,pat_input)
+    if st.session_state.projects:
 
-            st.session_state.test_plans = plans
-            st.session_state.queries = queries
+        project_input = st.selectbox(
+        "Project",
+        options=st.session_state.projects,
+        format_func=lambda p: p["name"]
+    )
 
-            if error_status:
-                st.error(f"Could not load test plans. Azure DevOps returned HTTP {error_status}.")
-            elif not plans:
-                st.warning("No active test plans found for this project.")
+        if st.button("Load Test Plans",disabled=project_input is None):
+            pat = st.session_state.get("pat", "")
+            st.session_state.setup_project = project_input["name"]
+            st.session_state.setup_pat = pat
+
+            if not pat.strip():
+                st.warning("Enter a PAT first.")
+                st.session_state.test_plans = []
+            else:
+                with st.spinner("Loading Azure DevOps data..."):
+
+                    plans, error_status = load_test_plans(project_input["name"],pat)
+
+                    queries = load_queries(project_input["name"],pat)
+
+                st.session_state.test_plans = plans
+                st.session_state.queries = queries
+
+                if error_status:
+                    st.error(f"Could not load test plans. Azure DevOps returned HTTP {error_status}.")
+                elif not plans:
+                    st.warning("No active test plans found for this project.")
 
     selected_plan = None
 
@@ -207,8 +251,8 @@ if not st.session_state.configured:
         selected_plan is None
         or selected_query is None
     )):
-        st.session_state.pat = pat_input
-        st.session_state.project = project_input
+        st.session_state.pat = st.session_state.get("pat", "")
+        st.session_state.project = project_input["name"]
 
         st.session_state.plan_id = int(selected_plan["id"])
         st.session_state.plan_name = selected_plan["name"]
@@ -219,8 +263,9 @@ if not st.session_state.configured:
         st.session_state.configured = True
         st.rerun()
 
+if not st.session_state.configured:
     st.stop()
-
+    
     
 pat = st.session_state.pat
 project = st.session_state.project
