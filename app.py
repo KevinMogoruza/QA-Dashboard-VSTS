@@ -159,6 +159,7 @@ def load_projects(pat):
 
 if "configured" not in st.session_state:
     st.session_state.configured = False
+    
 
 if "test_plans" not in st.session_state:
     st.session_state.test_plans = []
@@ -286,12 +287,9 @@ with sync_col:
 
 with config_col:
     if st.button("Change Config", use_container_width=True):
-        st.cache_data.clear()
-        st.session_state.configured = False
 
-        for key in ["pat", "project", "plan_id"]:
-            if key in st.session_state:
-                del st.session_state[key]
+        st.cache_data.clear()
+        st.session_state.clear()
 
         st.rerun()
 
