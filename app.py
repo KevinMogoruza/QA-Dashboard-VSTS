@@ -520,41 +520,71 @@ critical_bugs = priority_counts_all.get("1", 0)
 
 st.markdown("""
 <style>
-body {
-    background-color: #0b1220;
+
+/* Fondo oscuro permanente */
+html,
+body,
+[data-testid="stAppViewContainer"],
+[data-testid="stApp"],
+.main{
+    background-color:#0b1220 !important;
 }
-.block-container {
-    padding-top: 2rem;
+
+/* Mantener tu espaciado */
+.block-container{
+    padding-top:2rem;
 }
-.card {
-    background-color: #111827;
-    padding: 18px;
-    border-radius: 12px;
-    border: 1px solid #1f2937;
-    text-align: center;
+
+/* Tus cards */
+.card{
+    background-color:#111827;
+    padding:18px;
+    border-radius:12px;
+    border:1px solid #1f2937;
+    text-align:center;
 }
-.title {
-    font-size: 28px;
-    font-weight: 700;
-    color: white;
+
+/* Textos */
+.title{
+    font-size:28px;
+    font-weight:700;
+    color:white;
 }
-.subtitle {
-    color: #94a3b8;
-    margin-bottom: 20px;
+
+.subtitle{
+    color:#94a3b8;
+    margin-bottom:20px;
 }
-.metric-value {
-    font-size: 22px;
-    font-weight: bold;
-    color: white;
+
+.metric-value{
+    font-size:22px;
+    font-weight:bold;
+    color:white;
 }
-.metric-label {
-    color: #94a3b8;
-    font-size: 12px;
+
+.metric-label{
+    color:#94a3b8;
+    font-size:12px;
+}
+
+/* Botones Refresh y Change Config */
+.stButton > button{
+    background:#38bdf8 !important;
+    color:white !important;
+    border:none !important;
+    border-radius:8px;
+    font-weight:600;
+}
+
+.stButton > button:hover{
+    background:#0ea5e9 !important;
+}
+
+.stButton > button:active{
+    background:#0284c7 !important;
 }
 
 </style>
-            
-            
 """, unsafe_allow_html=True)
 
 
