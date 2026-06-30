@@ -253,21 +253,6 @@ TASK_CATALOGS = {
 }
 
 
-def _parse_story_ids(raw_story_ids):
-    values = raw_story_ids.replace("\n", ",").replace(";", ",").split(",")
-    story_ids = []
-
-    for value in values:
-        value = value.strip()
-        if not value:
-            continue
-        if not value.isdigit():
-            return [], f"Invalid story ID: {value}"
-        story_ids.append(int(value))
-
-    return story_ids, None
-
-
 def _render_tag_editor():
 
     if "task_tags" not in st.session_state:
@@ -291,9 +276,14 @@ def _render_tag_editor():
 
             clean_tag = new_tag.strip()
 
-            if clean_tag and clean_tag not in st.session_state.task_tags:
+            if not clean_tag:
+                st.warning("Enter a tag.")
+
+            elif clean_tag in st.session_state.task_tags:
+                st.warning("Tag already exists.")
+
+            else:
                 st.session_state.task_tags.append(clean_tag)
-                st.rerun()
 
     if not st.session_state.task_tags:
         return ""
@@ -343,9 +333,11 @@ def _render_story_editor():
             else:
                 story = int(value)
 
-                if story not in st.session_state.story_ids:
+                if story in st.session_state.story_ids:
+                    st.warning("Story ID already added.")
+
+                else:
                     st.session_state.story_ids.append(story)
-                    st.rerun()
 
     if not st.session_state.story_ids:
         return []
@@ -455,7 +447,7 @@ def render_task_generator(project, pat):
                 })
                 continue
 
-            assigned_to = story["assigned_to"]
+            assigned_to = story["assigned_to"] or ""
             context = {
                 "id": story_id,
                 "title": story["title"],
@@ -498,7 +490,15 @@ def render_task_generator(project, pat):
     if results:
         st.success(f"Created {len(results)} tasks.")
         st.dataframe(results, use_container_width=True, hide_index=True)
+        if st.button("OK", type="primary"):
+            st.session_state.story_ids = []
+            st.session_state.task_tags = []
+            st.rerun()
 
     if errors:
         st.error(f"{len(errors)} errors found while creating tasks.")
         st.dataframe(errors, use_container_width=True, hide_index=True)
+
+    if results and not errors:
+        st.session_state.story_ids = []
+        st.session_state.task_tags = []
