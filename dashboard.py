@@ -45,9 +45,9 @@ def render_dashboard(
     critical_bugs = priority_counts_all.get("1", 0)
 
     
-    _, sync_col, config_col = st.columns([7.4, 1.1, 1.3])
+    left, right = st.columns([9, 1])
 
-    with sync_col:
+    with right:
         if st.button("Refresh", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
