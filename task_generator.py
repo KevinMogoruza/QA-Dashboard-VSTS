@@ -170,7 +170,7 @@ TST_SPANISH_TASKS = [
             "casos de prueba realizados estan disponibles en la siguiente "
             "direccion: {reference_url}"
         ),
-        "activity": "Requeriments",
+        "activity": "Requirements",
         "effort": 1,
     },
     {
@@ -211,7 +211,7 @@ TST_ENGLISH_TASKS = [
             "Brief description of what will be tested. The completed test case "
             "designs are available at the following address: {reference_url}"
         ),
-        "activity": "Requeriments",
+        "activity": "Requirements",
         "effort": 1,
     },
     {
@@ -269,18 +269,28 @@ def _parse_story_ids(raw_story_ids):
 
 
 def _render_tag_editor():
+
     if "task_tags" not in st.session_state:
         st.session_state.task_tags = []
 
-    tag_col, add_col = st.columns([4, 1])
+    with st.form("tag_form", clear_on_submit=True):
 
-    with tag_col:
-        new_tag = st.text_input("Add tag", key="new_task_tag")
+        tag_col, add_col = st.columns([4,1])
 
-    with add_col:
-        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-        if st.button("Add", use_container_width=True):
+        with tag_col:
+            new_tag = st.text_input("Add tag")
+
+        with add_col:
+            st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+            submitted = st.form_submit_button(
+                "Add",
+                use_container_width=True
+            )
+
+        if submitted:
+
             clean_tag = new_tag.strip()
+
             if clean_tag and clean_tag not in st.session_state.task_tags:
                 st.session_state.task_tags.append(clean_tag)
                 st.rerun()
@@ -289,13 +299,69 @@ def _render_tag_editor():
         return ""
 
     for index, tag in enumerate(st.session_state.task_tags):
-        tag_label, remove_button = st.columns([5, 1])
+
+        tag_label, remove_button = st.columns([5,1])
+
         tag_label.markdown(f"`{tag}`")
+
         if remove_button.button("Remove", key=f"remove_tag_{index}"):
+
             st.session_state.task_tags.pop(index)
             st.rerun()
 
     return "; ".join(st.session_state.task_tags)
+
+
+def _render_story_editor():
+    if "story_ids" not in st.session_state:
+        st.session_state.story_ids = []
+
+    with st.form("story_form", clear_on_submit=True):
+
+        id_col, add_col = st.columns([4,1])
+
+        with id_col:
+            new_story = st.text_input("User Story ID")
+
+        with add_col:
+            st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+            submitted = st.form_submit_button(
+                "Add Story",
+                use_container_width=True
+            )
+
+        if submitted:
+
+            value = new_story.strip()
+
+            if not value:
+                st.warning("Enter a Story ID.")
+
+            elif not value.isdigit():
+                st.warning("Story ID must be numeric.")
+
+            else:
+                story = int(value)
+
+                if story not in st.session_state.story_ids:
+                    st.session_state.story_ids.append(story)
+                    st.rerun()
+
+    if not st.session_state.story_ids:
+        return []
+
+    for i, story in enumerate(st.session_state.story_ids):
+
+        c1, c2 = st.columns([5,1])
+
+        c1.markdown(f"`{story}`")
+
+        if c2.button("Remove", key=f"remove_story_{i}"):
+
+            st.session_state.story_ids.pop(i)
+            st.rerun()
+
+    return st.session_state.story_ids
 
 
 def _format_template(value, context):
@@ -345,11 +411,7 @@ def render_task_generator(project, pat):
     )
     templates = TASK_CATALOGS[catalog_name]
 
-    story_ids_raw = st.text_area(
-        "User story IDs",
-        placeholder="515465, 869788",
-        height=90
-    )
+    story_ids = _render_story_editor()
 
     reference_url = st.text_input(
         "Reference URL (opcional)",
@@ -368,11 +430,6 @@ def render_task_generator(project, pat):
     )
 
     if not submitted:
-        return
-
-    story_ids, parse_error = _parse_story_ids(story_ids_raw)
-    if parse_error:
-        st.warning(parse_error)
         return
 
     if not story_ids:
@@ -398,7 +455,7 @@ def render_task_generator(project, pat):
                 })
                 continue
 
-            assigned_to = story["assigned_to"] or fallback_assigned_to.strip()
+            assigned_to = story["assigned_to"]
             context = {
                 "id": story_id,
                 "title": story["title"],
