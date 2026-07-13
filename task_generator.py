@@ -3,6 +3,7 @@ import streamlit as st
 from azure_devops import create_task, load_work_item
 
 
+
 PROD_SPANISH_TASKS = [
     {
         "title": "TST PROD - ANALISIS - {id}",
@@ -17,17 +18,17 @@ PROD_SPANISH_TASKS = [
     {
         "title": "TST PROD - EXPLORATORIO - {id}",
         "description": (
-            "Llevar a cabo pruebas exploratorias y prototipado tecnico con "
-            "el fin de validar la viabilidad de la solucion propuesta para "
+            "Llevar a cabo pruebas exploratorias y prototipado técnico con "
+            "el fin de validar la viabilidad de la solución propuesta para "
             "la historia de usuario {id}."
         ),
         "activity": "Requirements",
         "effort": 2,
     },
     {
-        "title": "TST PROD - DISENO EN DEVOPS - {id}",
+        "title": "TST PROD - DISEÑO EN DEVOPS - {id}",
         "description": (
-            "Desarrollar y estructurar el diseno tecnico integral dentro del "
+            "Desarrollar y estructurar el diseño tecnico integral dentro del "
             "entorno de DevOps para cubrir las necesidades arquitectonicas "
             "de la historia de usuario {id}."
         ),
@@ -37,7 +38,7 @@ PROD_SPANISH_TASKS = [
     {
         "title": "TST PROD - DISENO EN DBX - {id}",
         "description": (
-            "Crear el diseno tecnico detallado y la arquitectura de datos en "
+            "Crear el diseño tecnico detallado y la arquitectura de datos en "
             "Databricks para la implementacion efectiva de la solucion de la "
             "historia de usuario {id}."
         ),
@@ -47,7 +48,7 @@ PROD_SPANISH_TASKS = [
     {
         "title": "TST PROD - PRUEBAS - {id}",
         "description": (
-            "Disenar, implementar y ejecutar la suite de casos de prueba "
+            "Diseñar, implementar y ejecutar la suite de casos de prueba "
             "automatizados y manuales para asegurar la calidad y funcionalidad "
             "optima de la historia de usuario {id}."
         ),
@@ -55,17 +56,17 @@ PROD_SPANISH_TASKS = [
         "effort": 6,
     },
     {
-        "title": "TST PROD - DOCUMENTACION - {id}",
+        "title": "TST PROD - DOCUMENTACIÓN - {id}",
         "description": (
-            "Preparar y redactar la documentacion tecnica y funcional "
+            "Preparar y redactar la documentación técnica y funcional "
             "detallada requerida para el soporte, despliegue y mantenimiento "
-            "tecnico de la historia de usuario {id}."
+            "técnico de la historia de usuario {id}."
         ),
         "activity": "Documentation",
         "effort": 2,
     },
     {
-        "title": "TST PROD - GESTION DE BUGS - {id}",
+        "title": "TST PROD - GESTIÓN DE BUGS - {id}",
         "description": (
             "Identificar, reportar, priorizar y mitigar los defectos o "
             "desviaciones encontradas durante las fases de desarrollo y "
@@ -166,38 +167,36 @@ TST_SPANISH_TASKS = [
     {
         "title": "TST - Analisis - {title} - {id}",
         "description": (
-            "Descripcion breve de lo que se va a probar. Los disenos de los "
-            "casos de prueba realizados estan disponibles en la siguiente "
-            "direccion: {reference_url}"
+            "Descripción breve de lo que se va a probar"
         ),
         "activity": "Requirements",
         "effort": 1,
     },
     {
-        "title": "TST - Diseno de casos de pruebas - {title} - {id}",
+        "title": "TST - Diseño de casos de pruebas - {title} - {id}",
         "description": (
-            "Los casos de prueba realizados estan disponibles en la siguiente "
-            "direccion: {reference_url}"
+            "Los casos de prueba realizados están disponibles en la siguiente "
+            "dirección: {reference_url}"
         ),
         "activity": "Design",
         "effort": 1,
     },
     {
-        "title": "TST - Ejecucion de casos de pruebas - {title} - {id}",
+        "title": "TST - Ejecución de casos de pruebas - {title} - {id}",
         "description": (
-            "Se ejecutaran los casos de pruebas mencionados en la tarea Diseno "
-            "de Casos de Pruebas para esta Historia, se actualizara el test "
-            "Plan y las graficas correspondientes: {reference_url}"
+            "Se ejecutarán los casos de pruebas mencionados en la tarea Diseño "
+            "de Casos de Pruebas para esta Historia, se actualizará el test "
+            "Plan y las gráficas correspondientes: {reference_url}"
         ),
         "activity": "Testing",
         "effort": 1,
     },
     {
-        "title": "TST - Documentacion de casos de pruebas - {title} - {id}",
+        "title": "TST - Documentación de casos de pruebas - {title} - {id}",
         "description": (
             "Se documentaran los casos de pruebas con las evidencias recolectas "
-            "durante la fase de ejecucion de pruebas, las evidencias se podran "
-            "encontrar en la siguiente direccion: {reference_url}"
+            "durante la fase de ejecución de pruebas, las evidencias se podrán "
+            "encontrar en la siguiente dirección: {reference_url}"
         ),
         "activity": "Documentation",
         "effort": 1,
@@ -246,11 +245,12 @@ TST_ENGLISH_TASKS = [
 ]
 
 TASK_CATALOGS = {
-    "DATOS - TST PROD - Spanish": PROD_SPANISH_TASKS,
+    "DATOS - TST PROD - Español": PROD_SPANISH_TASKS,
     "DATOS - TST PROD - English": PROD_ENGLISH_TASKS,
-    "QA General - TST - Spanish": TST_SPANISH_TASKS,
+    "QA General - TST - Español": TST_SPANISH_TASKS,
     "QA General - TST - English": TST_ENGLISH_TASKS,
 }
+
 
 
 def _render_tag_editor():
@@ -403,6 +403,12 @@ def render_task_generator(project, pat):
     )
     templates = TASK_CATALOGS[catalog_name]
 
+    email = st.text_input(
+    "Assigned To (Email)",
+    placeholder="usuario@copaair.com",
+    help="Correo del usuario al que se asignarán las tareas."
+)
+
     story_ids = _render_story_editor()
 
     reference_url = st.text_input(
@@ -427,6 +433,10 @@ def render_task_generator(project, pat):
     if not story_ids:
         st.warning("Please enter at least one user story ID.")
         return
+    
+    if not email.strip():
+        st.warning("Please enter an email.")
+        return
 
     results = []
     errors = []
@@ -447,7 +457,7 @@ def render_task_generator(project, pat):
                 })
                 continue
 
-            assigned_to = story["assigned_to"] or ""
+            assigned_to = email.strip()
             context = {
                 "id": story_id,
                 "title": story["title"],
