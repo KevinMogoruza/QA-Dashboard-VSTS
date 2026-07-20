@@ -244,11 +244,75 @@ TST_ENGLISH_TASKS = [
     },
 ]
 
+TST_ENGLISH_QA_TASKS = [
+    {
+        "title": "TST - Analysis - {title} - {id}",
+        "description": (
+            "Brief description of what will be tested. The completed test case "
+            "designs are available at the following address: {reference_url}"
+        ),
+        "activity": "Requirements",
+        "effort": 1,
+    },
+    {
+        "title": "TST - Test case design - {title} - {id}",
+        "description": (
+            "The completed test cases are available at the following address: "
+            "{reference_url}"
+        ),
+        "activity": "Design",
+        "effort": 1,
+    },
+    {
+        "title": "TST - Test case execution - {title} - {id}",
+        "description": (
+            "The test cases mentioned in the Test Case Design task for this "
+            "story will be executed. The test plan and the corresponding "
+            "charts will be updated: {reference_url}"
+        ),
+        "activity": "Testing",
+        "effort": 1,
+    },
+]
+
+TST_SPANISH_QA_TASKS = [
+    {
+        "title": "TST - Analisis - {title} - {id}",
+        "description": (
+            "Descripción breve de lo que se va a probar"
+        ),
+        "activity": "Requirements",
+        "effort": 1,
+    },
+    {
+        "title": "TST - Diseño de casos de pruebas - {title} - {id}",
+        "description": (
+            "Los casos de prueba realizados están disponibles en la siguiente "
+            "dirección: {reference_url}"
+        ),
+        "activity": "Design",
+        "effort": 1,
+    },
+    {
+        "title": "TST - Ejecución de casos de pruebas - {title} - {id}",
+        "description": (
+            "Se ejecutarán los casos de pruebas mencionados en la tarea Diseño "
+            "de Casos de Pruebas para esta Historia, se actualizará el test "
+            "Plan y las gráficas correspondientes: {reference_url}"
+        ),
+        "activity": "Testing",
+        "effort": 1,
+    },
+]
+
 TASK_CATALOGS = {
     "DATOS - TST PROD - Español": PROD_SPANISH_TASKS,
     "DATOS - TST PROD - English": PROD_ENGLISH_TASKS,
     "QA General - TST - Español": TST_SPANISH_TASKS,
     "QA General - TST - English": TST_ENGLISH_TASKS,
+    "QA Iniciativa - TST - English": TST_ENGLISH_QA_TASKS,
+    "QA Iniciativa - TST - Español": TST_SPANISH_QA_TASKS,
+
 }
 
 
