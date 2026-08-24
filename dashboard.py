@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
 
+from report_exporter import generate_dashboard_pdf
+
 
 def render_dashboard(
     project,
@@ -45,9 +47,17 @@ def render_dashboard(
     critical_bugs = priority_counts_all.get("1", 0)
 
     
-    left, right = st.columns([9, 1])
+    left, pdf_col, refresh_col = st.columns([7.8, 1.2, 1])
 
-    with right:
+    with pdf_col:
+        if st.button("Generate PDF", use_container_width=True):
+            try:
+                pdf_path = generate_dashboard_pdf(project, plan_id, df, bugs_df)
+                st.success(f"PDF saved: {pdf_path}")
+            except Exception as error:
+                st.error(f"Could not generate PDF: {error}")
+
+    with refresh_col:
         if st.button("Refresh", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
@@ -315,8 +325,9 @@ def render_dashboard(
         )
     )])
 
-        run_rate = round((passed + failed) / total * 100, 1) if total else 0
 
+        pass_rate = (passed / (passed + failed) * 100if (passed + failed) > 0    else 0)
+        fail_rate = 100 - pass_rate
         st.markdown("""
     <style>
     [data-testid="stPlotlyChart"] {
@@ -356,7 +367,7 @@ def render_dashboard(
         )
 
         fig.add_annotation(
-        text=f"<b>{run_rate}%</b><br>RUN RATE",
+        text=f"<b>{pass_rate:.1f}%</b><br>PASS RATE",
         x=0.5,
         y=0.5,
         showarrow=False,
