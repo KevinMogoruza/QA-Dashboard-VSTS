@@ -25,12 +25,17 @@ def render_dashboard(
 
     total_bugs = len(bugs_df)
 
+    severity_series = bugs_df.get(
+        "Severity",
+        pd.Series("N/A", index=bugs_df.index, dtype="object")
+    )
+
     if bugs_df.empty:
         state_counts = pd.Series(dtype="int64")
-        priority_counts_all = pd.Series(dtype="int64")
+        severity_counts_all = pd.Series(dtype="int64")
     else:
         state_counts = bugs_df["State"].value_counts()
-        priority_counts_all = bugs_df["Priority"].astype(str).value_counts()
+        severity_counts_all = severity_series.astype(str).value_counts()
 
     active_bugs = (
         state_counts.get("Active", 0)
@@ -44,7 +49,10 @@ def render_dashboard(
         + state_counts.get("Done", 0)
     )
 
-    critical_bugs = priority_counts_all.get("1", 0)
+    critical_bugs = sum(
+        count for severity, count in severity_counts_all.items()
+        if "critical" in severity.lower()
+    )
 
     
     left, pdf_col, refresh_col = st.columns([7.8, 1.2, 1])
@@ -465,46 +473,45 @@ def render_dashboard(
 
     with bug_col2:
 
-        st.subheader("Priority")
+        st.subheader("Severity")
 
-        priority_counts = (
-            bugs_df["Priority"]
-            .astype(str)
-            .value_counts()
-            .sort_index()
-        )
+        severity_counts = (
+        severity_series
+        .astype(str)
+        .value_counts()
+    )
 
-        fig_priority = go.Figure()
+        fig_severity = go.Figure()
 
-        priority_labels = [
-        f"P{priority} ({count})"
-        for priority, count in zip(
-            priority_counts.index,
-            priority_counts.values
+        severity_labels = [
+        f"{severity} ({count})"
+        for severity, count in zip(
+            severity_counts.index,
+            severity_counts.values
         )
     ]
 
-        fig_priority.add_bar(
-        x=priority_labels,
-        y=priority_counts.values,
-        text=priority_counts.values,
+        fig_severity.add_bar(
+        x=severity_labels,
+        y=severity_counts.values,
+        text=severity_counts.values,
         textposition="outside"
     )
 
-        fig_priority.update_layout(
-            paper_bgcolor="#0b1220",
-            plot_bgcolor="#0b1220",
-            font_color="white",
-            height=420,
-            margin=dict(
-                l=10,
-                r=10,
-                t=20,
-                b=55
-            )
+        fig_severity.update_layout(
+        paper_bgcolor="#0b1220",
+        plot_bgcolor="#0b1220",
+        font_color="white",
+        height=420,
+        margin=dict(
+            l=10,
+            r=10,
+            t=20,
+            b=55
         )
+    )
 
-        st.plotly_chart(fig_priority, use_container_width=True)
+        st.plotly_chart(fig_severity,use_container_width=True)
 
         
     bugs_display = bugs_df.copy()

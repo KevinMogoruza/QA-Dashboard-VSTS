@@ -242,7 +242,7 @@ def load_data(project, plan_id, pat):
 @st.cache_data(ttl=CACHE_TIME)
 def load_bugs(project, pat, queries):
 
-    columns = ["ID", "Title", "State", "Priority"]
+    columns = ["ID", "Title", "State", "Severity"]
 
     session = requests.Session()
     session.auth = HTTPBasicAuth('', pat)
@@ -273,7 +273,7 @@ def load_bugs(project, pat, queries):
         f"https://dev.azure.com/{org}"
         f"/_apis/wit/workitems"
         f"?ids={','.join(ids[:200])}"
-        f"&fields=System.Id,System.Title,System.State,Microsoft.VSTS.Common.Priority"
+        f"&fields=System.Id,System.Title,System.State,Microsoft.VSTS.Common.Severity"
         f"&api-version=7.1"
     )
 
@@ -289,8 +289,8 @@ def load_bugs(project, pat, queries):
             "ID": item["id"],
             "Title": item["fields"].get("System.Title", ""),
             "State": item["fields"].get("System.State", ""),
-            "Priority": item["fields"].get(
-                "Microsoft.VSTS.Common.Priority",
+            "Severity": item["fields"].get(
+                "Microsoft.VSTS.Common.Severity",
                 "N/A"
             )
         }
