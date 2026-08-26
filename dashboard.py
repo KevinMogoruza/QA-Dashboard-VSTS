@@ -49,6 +49,12 @@ def render_dashboard(
         + state_counts.get("Done", 0)
     )
 
+    bug_status_counts = pd.Series({
+        "Active": active_bugs,
+        "Closed": closed_bugs,
+    })
+    bug_status_counts = bug_status_counts[bug_status_counts > 0]
+
     critical_bugs = sum(
         count for severity, count in severity_counts_all.items()
         if "critical" in severity.lower()
@@ -188,7 +194,7 @@ def render_dashboard(
     c2.markdown(f"<div class='card'><div class='metric-value' style='color:#00e676'>{passed}</div><div class='metric-label'>PASSED</div></div>", unsafe_allow_html=True)
     c3.markdown(f"<div class='card'><div class='metric-value' style='color:#ff5252'>{failed}</div><div class='metric-label'>FAILED</div></div>", unsafe_allow_html=True)
     c4.markdown(f"<div class='card'><div class='metric-value' style='color:#facc15'>{notrun}</div><div class='metric-label'>NOT RUN</div></div>", unsafe_allow_html=True)
-    c5.markdown(f"<div class='card'><div class='metric-value' style='color:#3b82f6'>{run_rate}%</div><div class='metric-label'>RUN RATE</div></div>", unsafe_allow_html=True)
+    c5.markdown(f"<div class='card'><div class='metric-value' style='color:#3b82f6'>{run_rate}%</div><div class='metric-label'>RUN</div></div>", unsafe_allow_html=True)
 
     st.divider()
 
@@ -196,7 +202,7 @@ def render_dashboard(
     # =========================
     # MAIN LAYOUT
     # =========================
-    left, right = st.columns([1.6, 1])
+    left, right = st.columns([1, 1.6])
 
     bug_col1, bug_col2 = st.columns(2)
 
@@ -207,7 +213,7 @@ def render_dashboard(
     suite_df = df.copy()
     suite_df.index = range(1, len(suite_df) + 1)
 
-    with left:
+    with right:
         st.markdown("""
         <div style="
         background:#111827;
@@ -291,7 +297,7 @@ def render_dashboard(
     # =========================
     # DONUT PRO (CENTER FOCUS)
     # =========================
-    with right:
+    with left:
 
         st.markdown("""
         <div style="
@@ -334,8 +340,10 @@ def render_dashboard(
     )])
 
 
-        pass_rate = (passed / (passed + failed) * 100if (passed + failed) > 0    else 0)
-        fail_rate = 100 - pass_rate
+        pass_rate = (
+            passed / (passed + failed) * 100
+            if (passed + failed) > 0 else 0
+        )
         st.markdown("""
     <style>
     [data-testid="stPlotlyChart"] {
@@ -352,7 +360,7 @@ def render_dashboard(
             paper_bgcolor="#0b1220",
             plot_bgcolor="#0b1220",
             font_color="white",
-            height=420,
+            height=360,
             showlegend=True,
             legend=dict(
                 orientation="h",
@@ -399,8 +407,8 @@ def render_dashboard(
         state_labels = [
         f"{state} ({count})"
         for state, count in zip(
-            state_counts.index,
-            state_counts.values
+            bug_status_counts.index,
+            bug_status_counts.values
         )
     ]
 
@@ -408,17 +416,13 @@ def render_dashboard(
         data=[
             go.Pie(
                 labels=state_labels,
-                values=state_counts.values,
+                values=bug_status_counts.values,
                 hole=0.75,
 
                 marker=dict(
                     colors=[
-                        "#22c55e",  # verde
-                        "#ef4444",  # rojo
-                        "#f59e0b",  # amarillo
-                        "#3b82f6",  # azul
-                        "#8b5cf6",  # morado
-                        "#06b6d4"   # cyan
+                        "#22c55e",  # Active
+                        "#3b82f6",  # Closed
                     ],
                     line=dict(
                         color="#1C1313",
