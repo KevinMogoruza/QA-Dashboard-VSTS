@@ -172,7 +172,12 @@ def load_data(project, plan_id, pat):
             .strip()
             .lower()
             .replace(" ", "")
+            .replace("-", "")
+            .replace("_", "")
         )
+
+        if outcome in ["notapplicable", "na"]:
+            return None
 
         if outcome in ["", "notrun", "unspecified", "none"]:
             return "notrun"
@@ -213,7 +218,9 @@ def load_data(project, plan_id, pat):
 
         counts = {"passed": 0, "failed": 0, "notrun": 0}
         for point in points:
-            counts[normalize_outcome(point)] += 1
+            outcome = normalize_outcome(point)
+            if outcome:
+                counts[outcome] += 1
 
         test_points = counts["passed"] + counts["failed"] + counts["notrun"]
         executed = counts["passed"] + counts["failed"]
