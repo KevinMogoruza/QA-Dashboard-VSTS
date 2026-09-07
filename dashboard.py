@@ -18,9 +18,10 @@ def render_dashboard(
     total = int(df["Test Points"].sum()) if not df.empty else 0
     passed = int(df["passed"].sum()) if not df.empty else 0
     failed = int(df["failed"].sum()) if not df.empty else 0
+    blocked = int(df["blocked"].sum()) if "blocked" in df.columns else 0
     notrun = int(df["notrun"].sum()) if not df.empty else 0
 
-    executed = passed + failed
+    executed = passed + failed + blocked
     run_rate = round((executed / total) * 100, 1) if total else 0
 
     total_bugs = len(bugs_df)
@@ -234,7 +235,7 @@ def render_dashboard(
         """, unsafe_allow_html=True)
 
         numeric_columns = [
-            "suite_id", "passed", "failed", "notrun",
+            "suite_id", "passed", "failed", "blocked", "notrun",
             "Test Points", "Run %", "Pass %", "Fail %"
         ]
 
@@ -317,21 +318,21 @@ def render_dashboard(
             </h3>
         </div>
         """, unsafe_allow_html=True)
+        execution_segments = [
+            ("Passed", passed, "#22c55e"),
+            ("Failed", failed, "#ef4444"),
+            ("Not Run", notrun, "#f59e0b"),
+        ]
+        if blocked:
+            execution_segments.append(("Blocked", blocked, "#8b5cf6"))
+
         fig = go.Figure(data=[go.Pie(
-        labels=[
-            f"Passed ({passed})",
-            f"Failed ({failed})",
-            f"Not Run ({notrun})"
-        ],
-        values=[passed, failed, notrun],
+        labels=[f"{label} ({count})" for label, count, _ in execution_segments],
+        values=[count for _, count, _ in execution_segments],
         hole=0.75,
 
         marker=dict(
-            colors=[
-                "#22c55e",
-                "#ef4444",
-                "#f59e0b"
-            ],
+            colors=[color for _, _, color in execution_segments],
             line=dict(
                 color="#0b1220",
                 width=6
@@ -341,8 +342,8 @@ def render_dashboard(
 
 
         pass_rate = (
-            passed / (passed + failed) * 100
-            if (passed + failed) > 0 else 0
+            passed / executed * 100
+            if executed > 0 else 0
         )
         st.markdown("""
     <style>

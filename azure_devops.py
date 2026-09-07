@@ -159,7 +159,7 @@ def load_data(project, plan_id, pat):
     response = session.get(url, timeout=30)
     if response.status_code != 200:
         return pd.DataFrame(columns=[
-            "suite_id", "suite", "passed", "failed", "notrun",
+            "suite_id", "suite", "passed", "failed", "blocked", "notrun",
             "Test Points", "Run %", "Pass %", "Fail %"
         ])
 
@@ -181,6 +181,9 @@ def load_data(project, plan_id, pat):
 
         if outcome in ["", "notrun", "unspecified", "none"]:
             return "notrun"
+
+        if outcome == "blocked":
+            return "blocked"
 
         if outcome not in ["passed", "failed"]:
             return "notrun"
@@ -216,20 +219,21 @@ def load_data(project, plan_id, pat):
         else:
             points = response.json().get("value", [])
 
-        counts = {"passed": 0, "failed": 0, "notrun": 0}
+        counts = {"passed": 0, "failed": 0, "blocked": 0, "notrun": 0}
         for point in points:
             outcome = normalize_outcome(point)
             if outcome:
                 counts[outcome] += 1
 
-        test_points = counts["passed"] + counts["failed"] + counts["notrun"]
-        executed = counts["passed"] + counts["failed"]
+        test_points = sum(counts.values())
+        executed = counts["passed"] + counts["failed"] + counts["blocked"]
 
         return {
             "suite_id": suite_id,
             "suite": suite_name,
             "passed": counts["passed"],
             "failed": counts["failed"],
+            "blocked": counts["blocked"],
             "notrun": counts["notrun"],
             "Test Points": test_points,
             "Run %": pct(executed, test_points),
@@ -243,7 +247,7 @@ def load_data(project, plan_id, pat):
         rows = list(executor.map(get_suite_summary, suites))
 
     return pd.DataFrame(rows, columns=[
-        "suite_id", "suite", "passed", "failed", "notrun",
+        "suite_id", "suite", "passed", "failed", "blocked", "notrun",
         "Test Points", "Run %", "Pass %", "Fail %"
     ])
 @st.cache_data(ttl=CACHE_TIME)
