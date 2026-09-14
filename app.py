@@ -146,11 +146,15 @@ if not st.session_state.configured:
         format_func=lambda q: q["name"]
     )
 
-    if st.session_state.module == "dashboard" and st.button("Load Dashboard",disabled=(
-        selected_plan is None or
-        selected_query is None
-    )
-):
+    if (
+        st.session_state.module == "dashboard"
+        and st.session_state.test_plans
+        and st.session_state.queries
+        and st.button("Load Dashboard", disabled=(
+            selected_plan is None or
+            selected_query is None
+        ))
+    ):
 
         st.session_state.plan_id = selected_plan["id"]
         st.session_state.plan_name = selected_plan["name"]
